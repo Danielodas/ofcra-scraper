@@ -1,7 +1,44 @@
 import os
+from playwright.sync_api import sync_playwright
+from urllib.parse import urljoin
+import json
 
 def cls():
     os.system('cls' if os.name=='nt' else 'clear')
+
+
+def export_missions(missions):
+    return [
+        {
+            "mission": {
+                "url": m.url,
+                "name": m.name,
+                "type": m.type,
+                "date": m.date,
+                "map": m.map,
+                "author": m.author,
+                "duration": m.duration,
+                "bluefor": m.bluefor,
+                "redfor": m.redfor,
+                "greenfor": m.greenfor,
+                "total": m.total,
+            },
+            "players": [
+                {
+                    "name": p.name,
+                    "side": p.side,
+                    "kills": p.kills,
+                    "shots": p.shots,
+                    "role": p.role,
+                    "death": p.death,
+                    "tk": p.tk,
+                }
+                for p in m.players
+            ]
+        }
+        for m in missions
+    ]
+
 
 class Player:
     def __init__(self, name: str, side: str, kills: int, shots: int, role: str, death: int, tk: int):
@@ -12,10 +49,23 @@ class Player:
         self.role = role
         self.death = death
         self.tk = tk
+    
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "side": self.side,
+            "kills": self.kills,
+            "shots": self.shots,
+            "role": self.role,
+            "death": self.death,
+            "tk": self.tk
+        }
 
 
 class Mission:
-    def __init__(self, mission_type: str, date: str, mission_map: str, author: str, duration: str, bluefor: int, redfor: int, greenfor: int, total: int, players=None):
+    def __init__(self, url: str, name: str, mission_type: str, date: str, mission_map: str, author: str, duration: str, bluefor: int, redfor: int, greenfor: int, total: int, players=None):
+        self.url = url
+        self.name = name
         self.type = mission_type
         self.date = date
         self.map = mission_map
@@ -30,9 +80,107 @@ class Mission:
     def add_player(self, player: Player):
         self.players.append(player)
 
+    def to_dict(self):
+        return {
+            "url": self.url,
+            "name": self.name,
+            "type": self.type,
+            "date": self.date,
+            "map": self.map,
+            "author": self.author,
+            "duration": self.duration,
+            "bluefor": self.bluefor,
+            "redfor": self.redfor,
+            "greenfor": self.greenfor,
+            "total": self.total,
+            "players": [p.to_dict() for p in self.players]
+        }
+
 
 class Scraper:
-    pass
+
+    @staticmethod
+    def scrape_missions(browser):
+        url = "https://aar.ofcra.org/stats/missions.php"
+        missions = []
+
+        page = browser.new_page()
+        page.goto(url)
+        page.wait_for_selector("#missions tbody tr")
+
+        rows = page.locator("#missions tbody tr").all()
+
+        for row in rows:
+            c = row.locator("td")
+            link = c.nth(0).locator("a")
+
+            mission = Mission(
+                url=urljoin(page.url, link.get_attribute("href")),
+                name=link.inner_text(),
+                mission_type=c.nth(1).inner_text(),
+                date=c.nth(2).inner_text(),
+                mission_map=c.nth(3).inner_text(),
+                author=c.nth(4).inner_text(),
+                duration=c.nth(5).inner_text(),
+                bluefor=int(c.nth(6).inner_text() or 0),
+                redfor=int(c.nth(7).inner_text() or 0),
+                greenfor=int(c.nth(8).inner_text() or 0),
+                total=int(c.nth(9).inner_text() or 0),
+            )
+
+            missions.append(mission)
+
+        page.close()
+        return missions
+
+    @staticmethod
+    def scrape_players(browser, url: str):
+        players = []
+
+        page = browser.new_page()
+        page.goto(url)
+        page.wait_for_selector("h3:has-text('Players')")
+
+        rows = page.locator("h3:has-text('Players') + table tbody tr").all()
+
+        for row in rows:
+            c = row.locator("td")
+            link = c.nth(0).locator("a")
+
+            player = Player(
+                name=link.inner_text(),
+                side=c.nth(1).inner_text(),
+                kills=int(c.nth(2).inner_text() or 0),
+                shots=int(c.nth(3).inner_text() or 0),
+                role=c.nth(4).inner_text(),
+                death=int(c.nth(5).inner_text() or 0),
+                tk=int(c.nth(6).inner_text() or 0),
+            )
+
+            players.append(player)
+
+        page.close()
+        return players
+
+    @staticmethod
+    def scrape_all():
+        cls()
+        print("scraping missions + players...\n")
+
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+
+            missions = Scraper.scrape_missions(browser)
+
+            for i, mission in enumerate(missions, 1):
+                print(f"[{i}/{len(missions)}] Scraping players for: {mission.name}")
+
+                mission.players = Scraper.scrape_players(browser, mission.url)
+
+            browser.close()
+
+        input("\nPress any key to continue...")
+        return missions
 
 
 class Menu:
@@ -69,9 +217,9 @@ $x+  xx;        ;+X$Xx++++++.::     :x+  +x$
         print("\t============================")
         Menu.show_ascii()
         print("\t============================\n")
-        print("1. Scrape a page", "[WIP]")
+        print("1. Scrape a page")
         print("2. Scrape a specific number of missions", "[WIP]")
-        print("3. Export to JSON", "[WIP]")
+        print("3. Export to JSON")
         print("4. Help")
         print("5. Exit")
 
@@ -79,7 +227,7 @@ $x+  xx;        ;+X$Xx++++++.::     :x+  +x$
     
     def help():
         cls()
-        print("1. Scrape all missions in the first page of https://aar.ofcra.org/stats/missions.php")
+        print("1. Scrape all missions in the first page of https://aar.ofcra.org/stats/missions.php (10 missions)")
         print("2. Specify a number of missions to scrape, e.g. 1 for the latest mission")
         print("3. Export all scraped missions to JSON")
         print("4. Show help about the options")
@@ -96,11 +244,23 @@ if __name__ == "__main__":
 
         match int(option):
             case 1:
-                continue
+                missions = Scraper.scrape_all()
+                
+                # DEBUG
+                # for m in missions:
+                #     print(json.dumps([m.to_dict() for m in missions], indent=2))
+                # input()
             case 2:
-                continue
+                print("\nThis is still work in progress...")
+                input()
             case 3:
-                continue
+                data = export_missions(missions)
+
+                with open("missions.json", "w", encoding="utf-8") as f:
+                    json.dump(data, f, indent=2, ensure_ascii=False)
+
+                print("\nExported successfully.")
+                input()
             case 4:
                 Menu.help()
             case _:
