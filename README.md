@@ -12,11 +12,6 @@ For those who might not know: OFCRA is an ARMA 3 community that makes TVT missio
 - Extracts all players for each mission along their stats (kills, shots, role...)
 - Lets you export retrieved data to JSON
 
-## Features to come
-- Extract only specific players: currently it scrapes everything, but being able to scrape specific players will be faster and more useful for ARMA squads to analyze the JSON more easily
-- Extract a specific number of missions: maybe you don't want to scrape the latest 10 missions, what if you just want to scrape one? it becomes unnecessarily slow.
-- Extract more than 1 page: instead of scraping just 1 page (10 latest missions), why not scrape everything since 2017?! (or maybe just a few pages)
-
 ## Architecture
 1. Scrape missions list
 2. Store missions in array
