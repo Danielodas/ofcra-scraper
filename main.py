@@ -221,20 +221,15 @@ if __name__ == "__main__":
         cls()
         option = Menu.main_menu()
 
-        match int(option):
-            case 1:
+        match option:
+            case "1":
                 missions = Scraper.scrape_all()
-                
-                # DEBUG
-                # for m in missions:
-                #     print(json.dumps([m.to_dict() for m in missions], indent=2))
-                # input()
-            case 2:
+            case "2":
                 print("\nThis is still work in progress...")
                 input()
-            case 3:
+            case "3":
                 export_missions(missions)
-            case 4:
+            case "4":
                 Menu.help()
             case _:
                 print("\nExiting the program...")
