@@ -7,37 +7,6 @@ def cls():
     os.system('cls' if os.name=='nt' else 'clear')
 
 
-def export_missions(missions):
-    return [
-        {
-            "url": m.url,
-            "name": m.name,
-            "type": m.type,
-            "date": m.date,
-            "map": m.map,
-            "author": m.author,
-            "duration": m.duration,
-            "bluefor": m.bluefor,
-            "redfor": m.redfor,
-            "greenfor": m.greenfor,
-            "total": m.total,
-            "players": [
-                {
-                    "name": p.name,
-                    "side": p.side,
-                    "kills": p.kills,
-                    "shots": p.shots,
-                    "role": p.role,
-                    "death": p.death,
-                    "tk": p.tk,
-                }
-                for p in m.players
-            ]
-        }
-        for m in missions
-    ]
-
-
 class Player:
     def __init__(self, name: str, side: str, kills: int, shots: int, role: str, death: int, tk: int):
         self.name = name
@@ -233,6 +202,18 @@ $x+  xx;        ;+X$Xx++++++.::     :x+  +x$
         input()
 
 
+def export_missions(missions: list[Mission]):
+    data = []
+    for m in missions:
+        data.append(m.to_dict())
+
+        with open("missions.json", "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+
+    print("\nExported successfully.")
+    input()
+
+
 if __name__ == "__main__":
     missions = []
 
@@ -252,13 +233,7 @@ if __name__ == "__main__":
                 print("\nThis is still work in progress...")
                 input()
             case 3:
-                data = export_missions(missions)
-
-                with open("missions.json", "w", encoding="utf-8") as f:
-                    json.dump(data, f, indent=2, ensure_ascii=False)
-
-                print("\nExported successfully.")
-                input()
+                export_missions(missions)
             case 4:
                 Menu.help()
             case _:
