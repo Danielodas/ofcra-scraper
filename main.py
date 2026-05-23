@@ -10,19 +10,17 @@ def cls():
 def export_missions(missions):
     return [
         {
-            "mission": {
-                "url": m.url,
-                "name": m.name,
-                "type": m.type,
-                "date": m.date,
-                "map": m.map,
-                "author": m.author,
-                "duration": m.duration,
-                "bluefor": m.bluefor,
-                "redfor": m.redfor,
-                "greenfor": m.greenfor,
-                "total": m.total,
-            },
+            "url": m.url,
+            "name": m.name,
+            "type": m.type,
+            "date": m.date,
+            "map": m.map,
+            "author": m.author,
+            "duration": m.duration,
+            "bluefor": m.bluefor,
+            "redfor": m.redfor,
+            "greenfor": m.greenfor,
+            "total": m.total,
             "players": [
                 {
                     "name": p.name,
